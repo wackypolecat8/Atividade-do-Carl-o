@@ -1,17 +1,49 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot Marmitas</title>
+    <title>Marmita Caseira</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-        <h1>Chatbot de Marmitas</h1>
+    <header>
+        <h1>🍛 Marmita Caseira</h1>
+        <p>Comida boa, feita com carinho!</p>
+    </header>
 
-        <p>Nosso chatbot está sendo construído!</p>
+    <main>
+        <div class="container">
+
+            <h2>Atendimento Virtual</h2>
+
+            <div id="chat">
+                <div class="mensagem bot">
+                    Olá! Seja bem-vindo à Marmita Caseira!
+                    Sou seu assistente virtual.
+                    Como posso ajudar?
+                </div>
+            </div>
+
+            <div class="entrada">
+                <input
+                    type="text"
+                    id="mensagem"
+                    placeholder="Digite seu pedido..."
+                >
+
+                <button onclick="enviarMensagem()">
+                    Enviar
+                </button>
+            </div>
+
+        </div>
+    </main>
+
     <script src="script.js"></script>
+
 </body>
 </html>
