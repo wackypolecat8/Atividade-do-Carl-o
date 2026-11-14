@@ -1,4 +1,4 @@
-function enviarMensagem() {
+async function enviarMensagem() {
     const campo = document.getElementById("mensagem");
     const chat = document.getElementById("chat");
 
@@ -18,7 +18,7 @@ function enviarMensagem() {
 
     const mensagemBot = document.createElement("div");
     mensagemBot.className = "mensagem bot";
-    mensagemBot.textContent = "Entendi! Estou analisando seu pedido.";
+    mensagemBot.textContent = "Processando seu pedido...";
 
     chat.appendChild(mensagemBot);
 
