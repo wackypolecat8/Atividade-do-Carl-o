@@ -1,4 +1,5 @@
 
+const API
 const API_URL =
     "https://chatbot-marmitas-api.d2023004130.workers.dev/";
 
@@ -7,16 +8,75 @@ const API_URL =
 // ==========================================
 
 const cardapio = [
-    { id: "frango", nome: "Marmita de frango grelhado", preco: 20, palavras: ["frango grelhado", "marmita de frango"] },
-    { id: "bife", nome: "Marmita de bife acebolado", preco: 23, palavras: ["bife acebolado", "marmita de bife"] },
-    { id: "carne", nome: "Marmita de carne moída", preco: 21, palavras: ["carne moída", "carne moida"] },
-    { id: "linguica", nome: "Marmita de linguiça acebolada", preco: 20, palavras: ["linguiça acebolada", "linguica acebolada"] },
-    { id: "vegetariana", nome: "Marmita vegetariana", preco: 19, palavras: ["marmita vegetariana", "vegetariana"] },
-    { id: "milanesa", nome: "Marmita de frango à milanesa", preco: 22, palavras: ["frango à milanesa", "frango a milanesa"] },
-    { id: "ovo", nome: "Ovo frito", preco: 3, palavras: ["ovo frito", "ovos fritos"] },
-    { id: "batata", nome: "Batata frita", preco: 5, palavras: ["batata frita", "batatas fritas"] },
-    { id: "arroz", nome: "Porção extra de arroz", preco: 4, palavras: ["arroz extra", "porção extra de arroz", "porcao extra de arroz"] },
-    { id: "feijao", nome: "Porção extra de feijão", preco: 4, palavras: ["feijão extra", "feijao extra", "porção extra de feijão", "porcao extra de feijao"] }
+    {
+        id: "frango",
+        nome: "Marmita de frango grelhado",
+        preco: 20,
+        palavras: ["frango grelhado", "marmita de frango"]
+    },
+    {
+        id: "bife",
+        nome: "Marmita de bife acebolado",
+        preco: 23,
+        palavras: ["bife acebolado", "marmita de bife"]
+    },
+    {
+        id: "carne",
+        nome: "Marmita de carne moída",
+        preco: 21,
+        palavras: ["carne moída", "carne moida"]
+    },
+    {
+        id: "linguica",
+        nome: "Marmita de linguiça acebolada",
+        preco: 20,
+        palavras: ["linguiça acebolada", "linguica acebolada"]
+    },
+    {
+        id: "vegetariana",
+        nome: "Marmita vegetariana",
+        preco: 19,
+        palavras: ["marmita vegetariana", "vegetariana"]
+    },
+    {
+        id: "milanesa",
+        nome: "Marmita de frango à milanesa",
+        preco: 22,
+        palavras: ["frango à milanesa", "frango a milanesa"]
+    },
+    {
+        id: "ovo",
+        nome: "Ovo frito",
+        preco: 3,
+        palavras: ["ovo frito", "ovos fritos"]
+    },
+    {
+        id: "batata",
+        nome: "Batata frita",
+        preco: 5,
+        palavras: ["batata frita", "batatas fritas"]
+    },
+    {
+        id: "arroz",
+        nome: "Porção extra de arroz",
+        preco: 4,
+        palavras: [
+            "arroz extra",
+            "porção extra de arroz",
+            "porcao extra de arroz"
+        ]
+    },
+    {
+        id: "feijao",
+        nome: "Porção extra de feijão",
+        preco: 4,
+        palavras: [
+            "feijão extra",
+            "feijao extra",
+            "porção extra de feijão",
+            "porcao extra de feijao"
+        ]
+    }
 ];
 
 // ==========================================
@@ -27,13 +87,18 @@ let carrinho = {};
 let historico = [];
 
 let tipoEntrega = "entrega";
+
 const TAXA_ENTREGA = 5;
+
+// Evita enviar várias mensagens simultaneamente.
+let enviando = false;
 
 // ==========================================
 // 3. FUNÇÕES AUXILIARES
 // ==========================================
 
 function normalizar(texto) {
+
     return texto
         .toLowerCase()
         .normalize("NFD")
@@ -41,6 +106,7 @@ function normalizar(texto) {
 }
 
 function formatarDinheiro(valor) {
+
     return valor.toFixed(2).replace(".", ",");
 }
 
@@ -101,13 +167,16 @@ function atualizarCarrinho(textoOriginal) {
         encontrouProduto = true;
 
         if (remover) {
+
             delete carrinho[produto.id];
+
             continue;
         }
 
         const quantidade = obterQuantidade(texto, posicao);
 
         if (!carrinho[produto.id]) {
+
             carrinho[produto.id] = {
                 produto: produto,
                 quantidade: 0,
@@ -140,12 +209,13 @@ function atualizarCarrinho(textoOriginal) {
         }
 
         if (personalizacoes.length > 0) {
+
             carrinho[produto.id].personalizacao =
                 personalizacoes.join(", ");
         }
     }
 
-    // Forma de recebimento
+    // FORMA DE RECEBIMENTO
 
     if (
         texto.includes("retirada") ||
@@ -181,7 +251,9 @@ function calcularTotal() {
     }
 
     const entrega =
-        tipoEntrega === "entrega" ? TAXA_ENTREGA : 0;
+        tipoEntrega === "entrega"
+            ? TAXA_ENTREGA
+            : 0;
 
     return {
         subtotal: subtotal,
@@ -191,36 +263,104 @@ function calcularTotal() {
 }
 
 // ==========================================
-// 6. MOSTRAR CARRINHO
+// 6. MOSTRAR NOTA DO PEDIDO
 // ==========================================
 
-function exibirCarrinho(chat) {
+function exibirCarrinho() {
+
+    const nota = document.getElementById("notaFiscal");
 
     const itens = Object.values(carrinho);
 
-    if (itens.length === 0) return;
+    // Limpa o conteúdo anterior.
+
+    nota.innerHTML = "";
+
+    // CABEÇALHO
+
+    const cabecalho = document.createElement("div");
+
+    cabecalho.className = "nota-cabecalho";
+
+    const titulo = document.createElement("h2");
+
+    titulo.textContent = "🧾 Seu pedido";
+
+    const nomeRestaurante = document.createElement("p");
+
+    nomeRestaurante.textContent = "Marmita Caseira";
+
+    cabecalho.appendChild(titulo);
+    cabecalho.appendChild(nomeRestaurante);
+
+    nota.appendChild(cabecalho);
+
+    // CARRINHO VAZIO
+
+    if (itens.length === 0) {
+
+        const vazio = document.createElement("div");
+
+        vazio.className = "nota-vazia";
+
+        const icone = document.createElement("span");
+
+        icone.textContent = "🛒";
+
+        const mensagem = document.createElement("p");
+
+        mensagem.textContent =
+            "Seu pedido aparecerá aqui.";
+
+        const detalhe = document.createElement("small");
+
+        detalhe.textContent =
+            "Escolha os itens pelo chat para começar.";
+
+        vazio.appendChild(icone);
+        vazio.appendChild(mensagem);
+        vazio.appendChild(detalhe);
+
+        nota.appendChild(vazio);
+
+        return;
+    }
+
+    // VALORES DO PEDIDO
 
     const valores = calcularTotal();
 
-    const resumo = document.createElement("div");
-    resumo.className = "mensagem bot";
-
-    const titulo = document.createElement("strong");
-    titulo.textContent = "🛒 Resumo atualizado do pedido";
-
-    resumo.appendChild(titulo);
+    // LISTA DE PRODUTOS
 
     for (const item of itens) {
 
-        const linha = document.createElement("p");
+        const linha = document.createElement("div");
+
+        linha.className = "nota-item";
 
         const valor =
             item.produto.preco * item.quantidade;
 
-        linha.textContent =
-            `${item.quantidade}x ${item.produto.nome} - R$ ${formatarDinheiro(valor)}`;
+        const nome = document.createElement("div");
 
-        resumo.appendChild(linha);
+        nome.className = "nota-item-linha";
+
+        const descricao = document.createElement("span");
+
+        descricao.textContent =
+            `${item.quantidade}x ${item.produto.nome}`;
+
+        const preco = document.createElement("span");
+
+        preco.textContent =
+            `R$ ${formatarDinheiro(valor)}`;
+
+        nome.appendChild(descricao);
+        nome.appendChild(preco);
+
+        linha.appendChild(nome);
+
+        // PERSONALIZAÇÕES
 
         if (item.personalizacao) {
 
@@ -229,33 +369,91 @@ function exibirCarrinho(chat) {
             detalhe.textContent =
                 "Personalização: " + item.personalizacao;
 
-            resumo.appendChild(detalhe);
+            linha.appendChild(detalhe);
         }
+
+        nota.appendChild(linha);
     }
 
-    const linhaSubtotal = document.createElement("p");
-    linhaSubtotal.textContent =
-        "Subtotal: R$ " + formatarDinheiro(valores.subtotal);
+    // SUBTOTAL E ENTREGA
 
-    resumo.appendChild(linhaSubtotal);
+    const valoresDiv = document.createElement("div");
 
-    const linhaEntrega = document.createElement("p");
+    valoresDiv.className = "nota-valores";
 
-    linhaEntrega.textContent =
+    const linhaSubtotal = document.createElement("div");
+
+    linhaSubtotal.className = "nota-valor-linha";
+
+    const textoSubtotal = document.createElement("span");
+
+    textoSubtotal.textContent = "Subtotal";
+
+    const precoSubtotal = document.createElement("span");
+
+    precoSubtotal.textContent =
+        `R$ ${formatarDinheiro(valores.subtotal)}`;
+
+    linhaSubtotal.appendChild(textoSubtotal);
+    linhaSubtotal.appendChild(precoSubtotal);
+
+    valoresDiv.appendChild(linhaSubtotal);
+
+    const linhaEntrega = document.createElement("div");
+
+    linhaEntrega.className = "nota-valor-linha";
+
+    const textoEntrega = document.createElement("span");
+
+    textoEntrega.textContent =
         tipoEntrega === "entrega"
-            ? "Entrega: R$ 5,00"
-            : "Retirada: gratuita";
+            ? "Entrega"
+            : "Retirada";
 
-    resumo.appendChild(linhaEntrega);
+    const precoEntrega = document.createElement("span");
 
-    const total = document.createElement("strong");
+    precoEntrega.textContent =
+        tipoEntrega === "entrega"
+            ? `R$ ${formatarDinheiro(valores.entrega)}`
+            : "Grátis";
 
-    total.textContent =
-        "TOTAL: R$ " + formatarDinheiro(valores.total);
+    linhaEntrega.appendChild(textoEntrega);
+    linhaEntrega.appendChild(precoEntrega);
 
-    resumo.appendChild(total);
+    valoresDiv.appendChild(linhaEntrega);
 
-    chat.appendChild(resumo);
+    nota.appendChild(valoresDiv);
+
+    // TOTAL
+
+    const total = document.createElement("div");
+
+    total.className = "nota-total";
+
+    const textoTotal = document.createElement("span");
+
+    textoTotal.textContent = "TOTAL";
+
+    const precoTotal = document.createElement("span");
+
+    precoTotal.textContent =
+        `R$ ${formatarDinheiro(valores.total)}`;
+
+    total.appendChild(textoTotal);
+    total.appendChild(precoTotal);
+
+    nota.appendChild(total);
+
+    // RODAPÉ
+
+    const rodape = document.createElement("div");
+
+    rodape.className = "nota-rodape";
+
+    rodape.textContent =
+        "Obrigado pela preferência!";
+
+    nota.appendChild(rodape);
 }
 
 // ==========================================
@@ -267,13 +465,11 @@ function montarContexto(novaMensagem) {
     const mensagensRecentes = historico.slice(-8);
 
     let contexto = `
-Você está continuando um atendimento já iniciado.
+Você está continuando um atendimento da Marmita Caseira.
 
-Considere todo o histórico abaixo para entender
-o pedido completo do cliente.
+Considere o histórico abaixo para entender o pedido completo.
 
-Não peça novamente informações que o cliente
-já forneceu.
+Não peça novamente informações que o cliente já forneceu.
 
 HISTÓRICO DA CONVERSA:
 `;
@@ -285,18 +481,61 @@ HISTÓRICO DA CONVERSA:
                 ? "CLIENTE"
                 : "ATENDENTE";
 
-        contexto += `\n${autor}: ${mensagem.content}\n`;
+        contexto +=
+            `\n${autor}: ${mensagem.content}\n`;
+    }
+
+    // ESTADO ATUAL DO CARRINHO
+
+    const itens = Object.values(carrinho);
+
+    const valores = calcularTotal();
+
+    contexto += `
+
+ESTADO ATUAL DO CARRINHO:
+
+`;
+
+    if (itens.length === 0) {
+
+        contexto += "O carrinho está vazio.\n";
+
+    } else {
+
+        for (const item of itens) {
+
+            contexto +=
+                `${item.quantidade}x ${item.produto.nome} - R$ ${formatarDinheiro(item.produto.preco)} por unidade. `;
+
+            if (item.personalizacao) {
+
+                contexto +=
+                    `Personalização: ${item.personalizacao}. `;
+            }
+
+            contexto += "\n";
+        }
     }
 
     contexto += `
+Subtotal: R$ ${formatarDinheiro(valores.subtotal)}
+Entrega: ${tipoEntrega === "entrega" ? "R$ " + formatarDinheiro(valores.entrega) : "Retirada gratuita"}
+TOTAL: R$ ${formatarDinheiro(valores.total)}
+
+Use esses valores como referência para responder sobre o pedido.
+Não invente preços nem altere os valores do carrinho.
+
 NOVA MENSAGEM DO CLIENTE:
 ${novaMensagem}
 
-Continue o atendimento considerando o histórico completo.
+Continue o atendimento considerando o histórico e o carrinho atual.
 `;
 
-    // Respeita o limite de mensagem do Worker
+    // LIMITA O TAMANHO DA MENSAGEM
+
     if (contexto.length > 3500) {
+
         contexto = contexto.slice(-3500);
     }
 
@@ -309,7 +548,10 @@ Continue o atendimento considerando o histórico completo.
 
 async function enviarMensagem() {
 
+    if (enviando) return;
+
     const campo = document.getElementById("mensagem");
+
     const chat = document.getElementById("chat");
 
     const texto = campo.value.trim();
@@ -318,25 +560,32 @@ async function enviarMensagem() {
 
     campo.value = "";
 
-    // Mostra mensagem do cliente
+    enviando = true;
+
+    // MOSTRA MENSAGEM DO CLIENTE
 
     const mensagemUsuario = document.createElement("div");
 
     mensagemUsuario.className = "mensagem usuario";
+
     mensagemUsuario.textContent = texto;
 
     chat.appendChild(mensagemUsuario);
 
-    // Atualiza o carrinho
+    // ATUALIZA CARRINHO
 
     atualizarCarrinho(texto);
 
-    // Mostra processamento
+    exibirCarrinho();
+
+    // MOSTRA PROCESSAMENTO
 
     const mensagemBot = document.createElement("div");
 
     mensagemBot.className = "mensagem bot";
-    mensagemBot.textContent = "Processando seu pedido...";
+
+    mensagemBot.textContent =
+        "Processando seu pedido...";
 
     chat.appendChild(mensagemBot);
 
@@ -344,9 +593,11 @@ async function enviarMensagem() {
 
     try {
 
-        // Inclui o histórico anterior na mensagem enviada
+        // MONTA CONTEXTO
 
         const contexto = montarContexto(texto);
+
+        // ENVIA PARA O WORKER
 
         const resposta = await fetch(API_URL, {
 
@@ -357,8 +608,11 @@ async function enviarMensagem() {
             },
 
             body: JSON.stringify({
+
                 mensagem: contexto,
+
                 modelo: "groq"
+
             })
         });
 
@@ -367,6 +621,7 @@ async function enviarMensagem() {
         let dados;
 
         try {
+
             dados = JSON.parse(textoResposta);
 
         } catch (erro) {
@@ -387,35 +642,52 @@ async function enviarMensagem() {
         }
 
         const respostaIA =
-            dados.resposta || "Não recebi uma resposta.";
+            dados.resposta ||
+            "Não recebi uma resposta.";
+
+        // MOSTRA RESPOSTA DA IA
 
         mensagemBot.textContent = respostaIA;
 
-        // Salva a conversa para as próximas mensagens
+        // SALVA HISTÓRICO
 
         historico.push({
+
             role: "user",
+
             content: texto
+
         });
 
         historico.push({
+
             role: "assistant",
+
             content: respostaIA
+
         });
 
-        // Mostra o carrinho atualizado
+        // ATUALIZA NOTA
 
-        exibirCarrinho(chat);
+        exibirCarrinho();
 
     } catch (erro) {
 
-        console.error("Erro no atendimento:", erro);
+        console.error(
+            "Erro no atendimento:",
+            erro
+        );
 
         mensagemBot.textContent =
-            "Desculpe, ocorreu um problema: " + erro.message;
+            "Desculpe, ocorreu um problema: " +
+            erro.message;
     }
 
     chat.scrollTop = chat.scrollHeight;
+
+    enviando = false;
+
+    campo.focus();
 }
 
 // ==========================================
@@ -434,11 +706,20 @@ document.addEventListener("DOMContentLoaded", function () {
                 evento.key === "Enter" &&
                 !evento.shiftKey
             ) {
+
                 evento.preventDefault();
+
                 enviarMensagem();
             }
         });
     }
+
+    // EXIBE O CARRINHO INICIAL
+
+    exibirCarrinho();
+
+});
+
 });
 
 
