@@ -22,13 +22,19 @@
 
         <div class="layout">
 
-            <!-- ÁREA DO CHAT -->
-
             <section class="container">
 
                 <div class="titulo-chat">
                     <h2>Atendimento Virtual</h2>
                     <p>Faça seu pedido pelo chat!</p>
+
+                    <button
+                        type="button"
+                        id="btnNovoPedido"
+                        class="botao-novo-pedido"
+                        onclick="novoPedido()">
+                        ↻ Novo pedido
+                    </button>
                 </div>
 
                 <div id="chat">
@@ -58,8 +64,6 @@
 
             </section>
 
-            <!-- RESUMO DO PEDIDO -->
-
             <aside class="nota-container">
 
                 <div id="notaFiscal">
@@ -71,7 +75,6 @@
 
                     <div class="nota-vazia">
                         <span>🛒</span>
-
                         <p>Seu pedido aparecerá aqui.</p>
 
                         <small>
@@ -91,4 +94,5 @@
 
 </body>
 </html>
+
 
