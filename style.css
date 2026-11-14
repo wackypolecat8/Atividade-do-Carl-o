@@ -6,98 +6,276 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f5eee5;
-    color: #333;
+    font-family: Arial, Helvetica, sans-serif;
+    background: linear-gradient(135deg, #07182d, #12365b);
+    color: #172033;
+    min-height: 100vh;
 }
 
 header {
-    background-color: #713f22;
-    color: white;
-    padding: 30px;
     text-align: center;
+    padding: 28px 15px;
+    color: white;
 }
 
 header h1 {
-    margin-bottom: 10px;
+    font-size: 30px;
+    margin-bottom: 8px;
+}
+
+header p {
+    color: #c5d8ed;
 }
 
 main {
-    max-width: 800px;
-    margin: 40px auto;
+    width: 100%;
     padding: 20px;
 }
 
-.container {
-    background-color: white;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+.layout {
+    max-width: 1150px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+    gap: 24px;
+    align-items: start;
 }
 
-h2 {
-    margin-bottom: 20px;
-    color: #713f22;
+/* CHAT */
+
+.container {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.22);
+    min-width: 0;
+}
+
+.titulo-chat {
+    margin-bottom: 18px;
+}
+
+.titulo-chat h2 {
+    color: #12365b;
+    margin-bottom: 5px;
+}
+
+.titulo-chat p {
+    color: #64748b;
+    font-size: 14px;
 }
 
 #chat {
-    height: 350px;
+    height: 480px;
     overflow-y: auto;
-    border: 1px solid #ddd;
-    border-radius: 10px;
     padding: 15px;
-    background-color: #fffaf5;
-    margin-bottom: 15px;
+    background: #eaf0f7;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
+
+/* MENSAGENS */
 
 .mensagem {
-    padding: 12px;
-    border-radius: 10px;
-    margin-bottom: 10px;
     max-width: 85%;
+    padding: 12px 15px;
+    border-radius: 12px;
     line-height: 1.5;
+    font-size: 14px;
+    overflow-wrap: anywhere;
 }
 
-.bot {
-    background-color: #eee0d0;
-    color: #333;
+.mensagem.bot {
+    background: white;
+    color: #172033;
+    align-self: flex-start;
+    border: 1px solid #dbe3ed;
+}
+
+.mensagem.usuario {
+    background: #174d7a;
+    color: white;
+    align-self: flex-end;
 }
 
 .entrada {
     display: flex;
     gap: 10px;
+    margin-top: 15px;
 }
 
-input {
+.entrada input {
     flex: 1;
-    padding: 13px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 16px;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    outline: none;
+    font-size: 14px;
 }
 
-button {
-    background-color: #713f22;
+.entrada input:focus {
+    border-color: #174d7a;
+    box-shadow: 0 0 0 2px rgba(23, 77, 122, 0.12);
+}
+
+.entrada button {
+    background: #174d7a;
     color: white;
     border: none;
-    padding: 13px 22px;
-    border-radius: 8px;
+    padding: 0 22px;
+    border-radius: 9px;
     cursor: pointer;
-    font-size: 16px;
+    font-weight: bold;
 }
 
-button:hover {
-    background-color: #925b35;
+.entrada button:hover {
+    background: #0e365b;
 }
 
-@media (max-width: 600px) {
+/* NOTA DO PEDIDO */
+
+.nota-container {
+    position: sticky;
+    top: 20px;
+}
+
+#notaFiscal {
+    background: white;
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.22);
+}
+
+.nota-cabecalho {
+    text-align: center;
+    border-bottom: 2px dashed #cbd5e1;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+}
+
+.nota-cabecalho h2 {
+    color: #12365b;
+    margin-bottom: 7px;
+}
+
+.nota-cabecalho p {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.nota-vazia {
+    text-align: center;
+    padding: 30px 10px;
+    color: #64748b;
+}
+
+.nota-vazia span {
+    font-size: 35px;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.nota-vazia p {
+    font-weight: bold;
+    margin-bottom: 7px;
+}
+
+.nota-vazia small {
+    line-height: 1.5;
+}
+
+.nota-item {
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.nota-item-linha {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.nota-item small {
+    display: block;
+    color: #64748b;
+    margin-top: 6px;
+    font-size: 12px;
+}
+
+.nota-valores {
+    padding-top: 18px;
+}
+
+.nota-valor-linha {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #475569;
+}
+
+.nota-total {
+    border-top: 2px dashed #cbd5e1;
+    margin-top: 15px;
+    padding-top: 18px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: #166534;
+    font-size: 19px;
+    font-weight: bold;
+}
+
+.nota-rodape {
+    text-align: center;
+    margin-top: 22px;
+    padding-top: 15px;
+    border-top: 1px dashed #cbd5e1;
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+/* CELULAR E TABLET */
+
+@media (max-width: 800px) {
     main {
-        margin: 15px auto;
-        padding: 10px;
+        padding: 12px;
     }
 
-    .entrada {
-        flex-direction: column;
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .nota-container {
+        position: static;
+    }
+
+    #chat {
+        height: 400px;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 24px;
+    }
+
+    .container,
+    #notaFiscal {
+        padding: 15px;
+    }
+
+    .entrada button {
+        padding: 0 15px;
+    }
+
+    .mensagem {
+        max-width: 95%;
     }
 }
 
