@@ -129,10 +129,6 @@ const TAXA_ENTREGA = 5;
 
 let enviando = false;
 
-// Guarda o último produto mencionado.
-// Permite interpretar mensagens como "mais uma"
-// e "deixa só duas".
-
 let ultimoProdutoId = null;
 
 // ==========================================
@@ -140,17 +136,17 @@ let ultimoProdutoId = null;
 // ==========================================
 
 function normalizar(texto) {
-
     return texto
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[.,!?;:]/g, " ");
+        .replace(/[.,!?;:]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 function formatarDinheiro(valor) {
-
-    return valor.toFixed(2).replace(".", ",");
+    return Number(valor).toFixed(2).replace(".", ",");
 }
 
 function converterNumero(valor) {
@@ -170,22 +166,22 @@ function converterNumero(valor) {
         dez: 10
     };
 
-    return numeros[valor] || parseInt(valor) || 1;
+    return numeros[valor] || parseInt(valor, 10) || 1;
 }
 
 // ==========================================
-// 4. IDENTIFICAR QUANTIDADES
+// 4. IDENTIFICAR QUANTIDADE
 // ==========================================
 
 function obterQuantidade(texto, posicao) {
 
     const antes = texto.slice(
-        Math.max(0, posicao - 50),
+        Math.max(0, posicao - 45),
         posicao
     );
 
     const resultado = antes.match(
-        /\b(\d+|um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)\s*(?:(?:marmitas?|porcoes?|extras?)\s*(?:de)?\s*)?$/
+        /\b(\d+|um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)\s*(?:(?:marmitas?|porcoes?|extras?)\s*)?(?:de\s*)?$/
     );
 
     if (resultado) {
@@ -201,7 +197,9 @@ function obterQuantidade(texto, posicao) {
 
 function identificarProdutos(texto) {
 
-    const encontrados = [];
+    const candidatos = [];
+
+    // Identificação por número do cardápio.
 
     const tiposMarmita = {
         1: "frango",
@@ -211,8 +209,6 @@ function identificarProdutos(texto) {
         5: "vegetariana",
         6: "milanesa"
     };
-
-    // Reconhecimento por número do cardápio.
 
     const numeroTipo = texto.match(
         /\b(?:tipo|opcao|numero|n)\s*(\d+)\b/
@@ -231,9 +227,10 @@ function identificarProdutos(texto) {
 
         if (produto) {
 
-            encontrados.push({
+            candidatos.push({
                 produto,
                 posicao: numeroTipo.index,
+                tamanho: numeroTipo[0].length,
                 quantidade: obterQuantidade(
                     texto,
                     numeroTipo.index
@@ -242,42 +239,91 @@ function identificarProdutos(texto) {
         }
     }
 
-    // Reconhecimento por nomes e apelidos.
+    // Procura todos os nomes e apelidos.
+    // Os nomes mais específicos terão prioridade.
 
     for (const produto of cardapio) {
 
-        if (
-            encontrados.some(
-                item => item.produto.id === produto.id
-            )
-        ) {
-            continue;
-        }
+        for (const palavra of produto.palavras) {
 
-        const palavras = [...produto.palavras]
-            .sort((a, b) => b.length - a.length);
+            let inicio = 0;
 
-        for (const palavra of palavras) {
+            while (true) {
 
-            const posicao = texto.indexOf(palavra);
+                const posicao = texto.indexOf(
+                    palavra,
+                    inicio
+                );
 
-            if (posicao !== -1) {
+                if (posicao === -1) break;
 
-                encontrados.push({
-                    produto,
-                    posicao,
-                    quantidade: obterQuantidade(
-                        texto,
-                        posicao
-                    )
-                });
+                const antes = texto[posicao - 1] || "";
+                const depois =
+                    texto[posicao + palavra.length] || "";
 
-                break;
+                const limiteAntes =
+                    !/[a-z0-9]/.test(antes);
+
+                const limiteDepois =
+                    !/[a-z0-9]/.test(depois);
+
+                if (limiteAntes && limiteDepois) {
+
+                    candidatos.push({
+                        produto,
+                        posicao,
+                        tamanho: palavra.length,
+                        quantidade: obterQuantidade(
+                            texto,
+                            posicao
+                        )
+                    });
+                }
+
+                inicio = posicao + 1;
             }
         }
     }
 
-    return encontrados;
+    // Primeiro, os nomes mais longos.
+    candidatos.sort((a, b) => b.tamanho - a.tamanho);
+
+    const encontrados = [];
+
+    for (const candidato of candidatos) {
+
+        const inicio = candidato.posicao;
+        const fim = inicio + candidato.tamanho;
+
+        // Evita reconhecer "frango" dentro de
+        // "frango a milanesa".
+
+        const sobrepoe = encontrados.some(item => {
+
+            const outroInicio = item.posicao;
+            const outroFim =
+                outroInicio + item.tamanho;
+
+            return (
+                inicio < outroFim &&
+                fim > outroInicio
+            );
+        });
+
+        // Evita reconhecer o mesmo produto duas vezes.
+
+        const produtoJaExiste = encontrados.some(
+            item => item.produto.id === candidato.produto.id
+        );
+
+        if (!sobrepoe && !produtoJaExiste) {
+            encontrados.push(candidato);
+        }
+    }
+
+    return encontrados.sort(
+        (a, b) => a.posicao - b.posicao
+    );
 }
 
 // ==========================================
@@ -286,25 +332,25 @@ function identificarProdutos(texto) {
 
 function identificarOperacao(texto) {
 
-    // DEFINIR quantidade exata.
+    // Define a quantidade exata.
 
-    const definirQuantidade =
-        /\b(somente|apenas|so|deixa so|fica so|ajusta para|defina para|definir para)\b/.test(texto);
+    const definir =
+        /\b(somente|apenas|so|exatamente|deixa so|fica so|ajusta para|defina para|definir para)\b/.test(texto);
 
-    if (definirQuantidade) {
+    if (definir) {
         return "definir";
     }
 
-    // REMOVER produto.
+    // Remove ou diminui a quantidade.
 
     const remover =
-        /\b(remover|remova|retirar|retire|tirar|tira|excluir|exclua|cancelar|cancele|nao quero mais|nao quero)\b/.test(texto);
+        /\b(remover|remova|retirar|retire|retira|tirar|tira|excluir|exclua|cancelar|cancele|cancela|menos|nao quero mais|nao quero)\b/.test(texto);
 
     if (remover) {
         return "remover";
     }
 
-    // ADICIONAR por padrão.
+    // Adiciona por padrão.
 
     return "adicionar";
 }
@@ -320,13 +366,13 @@ function identificarPersonalizacoes(textoOriginal) {
     const personalizacoes = [];
 
     if (
-        /\b(sem cebola|retirar cebola|tirar cebola|tira cebola|remover cebola)\b/.test(texto)
+        /\b(sem cebola|retirar cebola|retire cebola|retira cebola|tirar cebola|tira cebola|remover cebola)\b/.test(texto)
     ) {
         personalizacoes.push("Sem cebola");
     }
 
     if (
-        /\b(sem alho|retirar alho|tirar alho|tira alho|remover alho)\b/.test(texto)
+        /\b(sem alho|retirar alho|retire alho|retira alho|tirar alho|tira alho|remover alho)\b/.test(texto)
     ) {
         personalizacoes.push("Sem alho");
     }
@@ -383,11 +429,9 @@ function aplicarPersonalizacao(id, personalizacoes) {
 
     for (const personalizacao of personalizacoes) {
 
-        const atual = carrinho[id].personalizacao;
+        const atual = carrinho[id].personalizacao || "";
 
-        if (
-            !atual.includes(personalizacao)
-        ) {
+        if (!atual.includes(personalizacao)) {
 
             carrinho[id].personalizacao =
                 atual
@@ -398,144 +442,7 @@ function aplicarPersonalizacao(id, personalizacoes) {
 }
 
 // ==========================================
-// 9. ATUALIZAR CARRINHO
-// ==========================================
-
-function atualizarCarrinho(textoOriginal) {
-
-    const texto = normalizar(textoOriginal);
-
-    // Forma de recebimento.
-
-    if (
-        texto.includes("retirada") ||
-        texto.includes("vou buscar") ||
-        texto.includes("buscar no restaurante")
-    ) {
-        tipoEntrega = "retirada";
-    }
-
-    if (
-        texto.includes("com entrega") ||
-        texto.includes("quero entrega") ||
-        texto.includes("entrega em casa")
-    ) {
-        tipoEntrega = "entrega";
-    }
-
-    const encontrados = identificarProdutos(texto);
-
-    const personalizacoes =
-        identificarPersonalizacoes(texto);
-
-    const mencionaIngrediente =
-        /\b(cebola|alho|sal|pimenta)\b/.test(texto);
-
-    // Personalização sem repetir o nome do produto.
-    // Exemplo: "tira a cebola".
-
-    if (
-        encontrados.length === 0 &&
-        personalizacoes.length > 0 &&
-        ultimoProdutoId
-    ) {
-
-        aplicarPersonalizacao(
-            ultimoProdutoId,
-            personalizacoes
-        );
-
-        return true;
-    }
-
-    // Se a mensagem fala de ingrediente,
-    // não devemos remover a marmita inteira.
-
-    if (
-        encontrados.length === 0 &&
-        mencionaIngrediente
-    ) {
-        return false;
-    }
-
-    const operacao = identificarOperacao(texto);
-
-    // Mensagens curtas como "mais uma" ou "deixa só duas".
-
-    if (
-        encontrados.length === 0 &&
-        ultimoProdutoId &&
-        /\b(mais uma|mais um|mais duas|mais dois|outra|outro|so uma|so um|so duas|so dois|deixa so|fica so)\b/.test(texto)
-    ) {
-
-        const quantidadeMatch = texto.match(
-            /\b(\d+|um|uma|dois|duas|tres|quatro|cinco)\b/
-        );
-
-        const quantidade = quantidadeMatch
-            ? converterNumero(quantidadeMatch[1])
-            : 1;
-
-        alterarQuantidade(
-            ultimoProdutoId,
-            quantidade,
-            operacao
-        );
-
-        return true;
-    }
-
-    for (const item of encontrados) {
-
-        const id = item.produto.id;
-
-        ultimoProdutoId = id;
-
-        // Ingredientes e ponto de carne são aplicados
-        // à marmita, sem remover o produto.
-
-        if (
-            personalizacoes.length > 0 &&
-            ["frango", "bife", "carne", "linguica", "milanesa"].includes(id)
-        ) {
-
-            if (!carrinho[id]) {
-
-                carrinho[id] = {
-                    produto: item.produto,
-                    quantidade: item.quantidade,
-                    personalizacao: ""
-                };
-
-            } else if (item.quantidade > 0) {
-
-                // Não adiciona novamente o produto
-                // quando a mensagem é somente personalização.
-            }
-
-            aplicarPersonalizacao(
-                id,
-                personalizacoes
-            );
-
-            continue;
-        }
-
-        // Aplica a operação ao produto.
-
-        alterarQuantidade(
-            id,
-            item.quantidade,
-            operacao,
-            item.produto
-        );
-    }
-
-    return encontrados.length > 0;
-}
-
-// ==========================================
-// 10. ALTERAR QUANTIDADE
+// 9. ALTERAR QUANTIDADE
 // ==========================================
 
 function alterarQuantidade(
@@ -562,27 +469,292 @@ function alterarQuantidade(
 
     if (operacao === "definir") {
 
+        // Substitui pela quantidade informada.
+
         carrinho[id].quantidade = quantidade;
 
     } else if (operacao === "remover") {
+
+        // Diminui a quantidade existente.
 
         carrinho[id].quantidade -= quantidade;
 
     } else {
 
+        // Soma à quantidade existente.
+
         carrinho[id].quantidade += quantidade;
     }
 
-    // Impede quantidades negativas.
-
     if (carrinho[id].quantidade <= 0) {
-
         delete carrinho[id];
     }
 }
 
 // ==========================================
-// 11. CALCULAR VALORES
+// 10. FORMA DE RECEBIMENTO
+// ==========================================
+
+function atualizarFormaRecebimento(texto) {
+
+    if (
+        /\b(retirada|vou buscar|buscar no restaurante|retirar no restaurante)\b/.test(texto)
+    ) {
+        tipoEntrega = "retirada";
+    }
+
+    if (
+        /\b(com entrega|quero entrega|entrega em casa|receber em casa)\b/.test(texto)
+    ) {
+        tipoEntrega = "entrega";
+    }
+}
+
+// ==========================================
+// 11. ATUALIZAR CARRINHO
+// ==========================================
+
+function atualizarCarrinho(textoOriginal) {
+
+    const texto = normalizar(textoOriginal);
+
+    atualizarFormaRecebimento(texto);
+
+    const encontrados = identificarProdutos(texto);
+
+    const personalizacoes =
+        identificarPersonalizacoes(texto);
+
+    const mencionaIngrediente =
+        /\b(cebola|alho|sal|pimenta)\b/.test(texto);
+
+    const operacao = identificarOperacao(texto);
+
+    // Personalização sem repetir o nome do produto.
+    // Exemplo: "tira a cebola".
+
+    if (
+        encontrados.length === 0 &&
+        personalizacoes.length > 0 &&
+        ultimoProdutoId
+    ) {
+
+        aplicarPersonalizacao(
+            ultimoProdutoId,
+            personalizacoes
+        );
+
+        return true;
+    }
+
+    // Se fala de ingrediente, não remove a marmita.
+
+    if (
+        encontrados.length === 0 &&
+        mencionaIngrediente
+    ) {
+        return false;
+    }
+
+    // Mensagens curtas que usam o último produto.
+    // Exemplo: "mais uma", "deixa só duas".
+
+    if (
+        encontrados.length === 0 &&
+        ultimoProdutoId &&
+        /\b(mais uma|mais um|mais duas|mais dois|outra|outro|so uma|so um|so duas|so dois|deixa so|fica so)\b/.test(texto)
+    ) {
+
+        const quantidadeMatch = texto.match(
+            /\b(\d+|um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)\b/
+        );
+
+        const quantidade = quantidadeMatch
+            ? converterNumero(quantidadeMatch[1])
+            : 1;
+
+        alterarQuantidade(
+            ultimoProdutoId,
+            quantidade,
+            operacao
+        );
+
+        return true;
+    }
+
+    // Personalização sem alterar a quantidade existente.
+
+    if (
+        personalizacoes.length > 0 &&
+        encontrados.length > 0
+    ) {
+
+        for (const item of encontrados) {
+
+            const id = item.produto.id;
+
+            if (
+                ["frango", "bife", "carne", "linguica", "milanesa"].includes(id)
+            ) {
+
+                ultimoProdutoId = id;
+
+                if (!carrinho[id]) {
+
+                    carrinho[id] = {
+                        produto: item.produto,
+                        quantidade: item.quantidade,
+                        personalizacao: ""
+                    };
+                }
+
+                aplicarPersonalizacao(
+                    id,
+                    personalizacoes
+                );
+            }
+        }
+
+        return true;
+    }
+
+    // Adiciona, remove ou define a quantidade.
+
+    for (const item of encontrados) {
+
+        const id = item.produto.id;
+
+        ultimoProdutoId = id;
+
+        alterarQuantidade(
+            id,
+            item.quantidade,
+            operacao,
+            item.produto
+        );
+    }
+
+    return encontrados.length > 0;
+}
+
+// ==========================================
+// 12. RESETAR PEDIDO
+// ==========================================
+
+function mostrarBoasVindas() {
+
+    const chat = document.getElementById("chat");
+
+    if (!chat) return;
+
+    chat.innerHTML = "";
+
+    const boasVindas = document.createElement("div");
+
+    boasVindas.className = "mensagem bot";
+
+    boasVindas.textContent =
+        "Olá! Seja bem-vindo novamente à Marmita Caseira! " +
+        "Seu pedido anterior foi apagado. " +
+        "Como posso ajudar?";
+
+    chat.appendChild(boasVindas);
+}
+
+function limparPedido() {
+
+    // Apaga o carrinho.
+
+    carrinho = {};
+
+    // Apaga o histórico enviado à IA.
+
+    historico = [];
+
+    // Esquece o último produto mencionado.
+
+    ultimoProdutoId = null;
+
+    // Volta para entrega como forma padrão.
+
+    tipoEntrega = "entrega";
+
+    // Limpa o campo de mensagem.
+
+    const campo = document.getElementById("mensagem");
+
+    if (campo) {
+        campo.value = "";
+    }
+
+    // Limpa a conversa e mostra boas-vindas.
+
+    mostrarBoasVindas();
+
+    // Atualiza a nota fiscal.
+
+    exibirCarrinho();
+
+    if (campo) {
+        campo.focus();
+    }
+}
+
+// ==========================================
+// 13. BOTÃO NOVO PEDIDO
+// ==========================================
+
+function novoPedido() {
+
+    if (enviando) {
+        alert("Aguarde o atendimento atual terminar.");
+        return;
+    }
+
+    const confirmar = window.confirm(
+        "Deseja realmente começar um novo pedido?\n\n" +
+        "A conversa anterior e todos os produtos do carrinho serão apagados."
+    );
+
+    if (confirmar) {
+        limparPedido();
+    }
+}
+
+// ==========================================
+// 14. RECONHECER PEDIDO NOVO PELO CHAT
+// ==========================================
+
+function solicitouNovoPedido(textoOriginal) {
+
+    const texto = normalizar(textoOriginal);
+
+    const frases = [
+        "novo pedido",
+        "comecar outro pedido",
+        "fazer outro pedido",
+        "comecar de novo",
+        "comecar novamente",
+        "quero recomecar",
+        "vamos recomecar",
+        "quero mudar meu pedido",
+        "quero mudar o pedido",
+        "mudar meu pedido",
+        "mudar o pedido",
+        "apagar a conversa",
+        "limpar a conversa",
+        "cancelar tudo",
+        "cancela tudo",
+        "zerar o pedido",
+        "comecar do zero",
+        "comecar desde o inicio"
+    ];
+
+    return frases.some(frase => texto.includes(frase));
+}
+
+// ==========================================
+// 15. CALCULAR VALORES
 // ==========================================
 
 function calcularTotal() {
@@ -608,7 +780,7 @@ function calcularTotal() {
 }
 
 // ==========================================
-// 12. MOSTRAR NOTA DO PEDIDO
+// 16. MOSTRAR NOTA FISCAL
 // ==========================================
 
 function exibirCarrinho() {
@@ -621,7 +793,7 @@ function exibirCarrinho() {
 
     nota.innerHTML = "";
 
-    // CABEÇALHO
+    // Cabeçalho.
 
     const cabecalho = document.createElement("div");
 
@@ -640,7 +812,7 @@ function exibirCarrinho() {
 
     nota.appendChild(cabecalho);
 
-    // CARRINHO VAZIO
+    // Carrinho vazio.
 
     if (itens.length === 0) {
 
@@ -673,7 +845,7 @@ function exibirCarrinho() {
 
     const valores = calcularTotal();
 
-    // PRODUTOS
+    // Produtos.
 
     for (const item of itens) {
 
@@ -716,7 +888,7 @@ function exibirCarrinho() {
         nota.appendChild(linha);
     }
 
-    // SUBTOTAL E ENTREGA
+    // Subtotal e entrega.
 
     const valoresDiv = document.createElement("div");
 
@@ -765,7 +937,7 @@ function exibirCarrinho() {
 
     nota.appendChild(valoresDiv);
 
-    // TOTAL
+    // Total.
 
     const total = document.createElement("div");
 
@@ -785,7 +957,7 @@ function exibirCarrinho() {
 
     nota.appendChild(total);
 
-    // RODAPÉ
+    // Rodapé.
 
     const rodape = document.createElement("div");
 
@@ -798,7 +970,7 @@ function exibirCarrinho() {
 }
 
 // ==========================================
-// 13. MONTAR CONTEXTO DA IA
+// 17. MONTAR CONTEXTO DA IA
 // ==========================================
 
 function montarContexto(novaMensagem) {
@@ -846,8 +1018,7 @@ ESTADO ATUAL DO CARRINHO:
         for (const item of itens) {
 
             contexto +=
-                `${item.quantidade}x ${item.produto.nome}, ` +
-                `preço unitário R$ ${formatarDinheiro(item.produto.preco)}. `;
+                `${item.quantidade}x ${item.produto.nome}. `;
 
             if (item.personalizacao) {
 
@@ -878,7 +1049,6 @@ Responda naturalmente, em português brasileiro.
 `;
 
     if (contexto.length > 3500) {
-
         contexto = contexto.slice(-3500);
     }
 
@@ -886,7 +1056,7 @@ Responda naturalmente, em português brasileiro.
 }
 
 // ==========================================
-// 14. ENVIAR MENSAGEM
+// 18. ENVIAR MENSAGEM
 // ==========================================
 
 async function enviarMensagem() {
@@ -903,11 +1073,29 @@ async function enviarMensagem() {
 
     if (!texto) return;
 
+    // Verifica se o cliente quer começar novamente.
+
+    if (solicitouNovoPedido(texto)) {
+
+        const confirmar = window.confirm(
+            "Deseja apagar a conversa anterior e começar um novo pedido?\n\n" +
+            "Todos os produtos do carrinho também serão removidos."
+        );
+
+        if (confirmar) {
+            limparPedido();
+        } else {
+            campo.value = "";
+        }
+
+        return;
+    }
+
     campo.value = "";
 
     enviando = true;
 
-    // MENSAGEM DO CLIENTE
+    // Mensagem do cliente.
 
     const mensagemUsuario = document.createElement("div");
 
@@ -917,13 +1105,13 @@ async function enviarMensagem() {
 
     chat.appendChild(mensagemUsuario);
 
-    // ATUALIZA CARRINHO
+    // Atualiza o carrinho.
 
     atualizarCarrinho(texto);
 
     exibirCarrinho();
 
-    // PROCESSAMENTO
+    // Indicador de processamento.
 
     const mensagemBot = document.createElement("div");
 
@@ -953,7 +1141,6 @@ async function enviarMensagem() {
                 mensagem: contexto,
 
                 modelo: "groq"
-
             })
         });
 
@@ -988,7 +1175,7 @@ async function enviarMensagem() {
 
         mensagemBot.textContent = respostaIA;
 
-        // HISTÓRICO
+        // Guarda o histórico somente após resposta válida.
 
         historico.push({
             role: "user",
@@ -1022,7 +1209,7 @@ async function enviarMensagem() {
 }
 
 // ==========================================
-// 15. ENVIAR COM ENTER
+// 19. ENVIAR COM ENTER
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", function () {
