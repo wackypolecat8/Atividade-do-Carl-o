@@ -1,5 +1,4 @@
 
-const API
 const API_URL =
     "https://chatbot-marmitas-api.d2023004130.workers.dev/";
 
@@ -12,58 +11,91 @@ const cardapio = [
         id: "frango",
         nome: "Marmita de frango grelhado",
         preco: 20,
-        palavras: ["frango grelhado", "marmita de frango"]
+        palavras: [
+            "marmita de frango grelhado",
+            "frango grelhado",
+            "marmita de frango"
+        ]
     },
     {
         id: "bife",
         nome: "Marmita de bife acebolado",
         preco: 23,
-        palavras: ["bife acebolado", "marmita de bife"]
+        palavras: [
+            "marmita de bife acebolado",
+            "bife acebolado",
+            "marmita de bife"
+        ]
     },
     {
         id: "carne",
         nome: "Marmita de carne moída",
         preco: 21,
-        palavras: ["carne moída", "carne moida"]
+        palavras: [
+            "marmita de carne moida",
+            "carne moida",
+            "marmita de carne"
+        ]
     },
     {
         id: "linguica",
         nome: "Marmita de linguiça acebolada",
         preco: 20,
-        palavras: ["linguiça acebolada", "linguica acebolada"]
+        palavras: [
+            "marmita de linguica acebolada",
+            "linguica acebolada",
+            "marmita de linguica"
+        ]
     },
     {
         id: "vegetariana",
         nome: "Marmita vegetariana",
         preco: 19,
-        palavras: ["marmita vegetariana", "vegetariana"]
+        palavras: [
+            "marmita vegetariana",
+            "vegetariana"
+        ]
     },
     {
         id: "milanesa",
         nome: "Marmita de frango à milanesa",
         preco: 22,
-        palavras: ["frango à milanesa", "frango a milanesa"]
+        palavras: [
+            "marmita de frango a milanesa",
+            "frango a milanesa"
+        ]
     },
     {
         id: "ovo",
         nome: "Ovo frito",
         preco: 3,
-        palavras: ["ovo frito", "ovos fritos"]
+        palavras: [
+            "ovos fritos extras",
+            "ovos fritos",
+            "ovo frito",
+            "ovos extras",
+            "ovo extra",
+            "ovos",
+            "ovo"
+        ]
     },
     {
         id: "batata",
         nome: "Batata frita",
         preco: 5,
-        palavras: ["batata frita", "batatas fritas"]
+        palavras: [
+            "batatas fritas",
+            "batata frita",
+            "batata extra"
+        ]
     },
     {
         id: "arroz",
         nome: "Porção extra de arroz",
         preco: 4,
         palavras: [
-            "arroz extra",
-            "porção extra de arroz",
-            "porcao extra de arroz"
+            "porcao extra de arroz",
+            "arroz extra"
         ]
     },
     {
@@ -71,10 +103,8 @@ const cardapio = [
         nome: "Porção extra de feijão",
         preco: 4,
         palavras: [
-            "feijão extra",
-            "feijao extra",
-            "porção extra de feijão",
-            "porcao extra de feijao"
+            "porcao extra de feijao",
+            "feijao extra"
         ]
     }
 ];
@@ -90,7 +120,6 @@ let tipoEntrega = "entrega";
 
 const TAXA_ENTREGA = 5;
 
-// Evita enviar várias mensagens simultaneamente.
 let enviando = false;
 
 // ==========================================
@@ -110,18 +139,9 @@ function formatarDinheiro(valor) {
     return valor.toFixed(2).replace(".", ",");
 }
 
-function obterQuantidade(texto, posicao) {
+// Converte números escritos por extenso.
 
-    const antes = texto.slice(
-        Math.max(0, posicao - 40),
-        posicao
-    );
-
-    const resultado = antes.match(
-        /(\d+|um|uma|dois|duas|tres|quatro|cinco)\s*(?:marmitas?\s+de\s+)?$/
-    );
-
-    if (!resultado) return 1;
+function converterNumero(valor) {
 
     const numeros = {
         um: 1,
@@ -130,92 +150,196 @@ function obterQuantidade(texto, posicao) {
         duas: 2,
         tres: 3,
         quatro: 4,
-        cinco: 5
+        cinco: 5,
+        seis: 6,
+        sete: 7,
+        oito: 8,
+        nove: 9,
+        dez: 10
     };
 
-    return numeros[resultado[1]] ||
-        parseInt(resultado[1]) ||
-        1;
+    return numeros[valor] || parseInt(valor) || 1;
+}
+
+// Identifica a quantidade do produto.
+
+function obterQuantidade(texto, posicao) {
+
+    // Primeiro procura quantidade associada a marmitas.
+    // Exemplo: "quero 2 marmitas do tipo 2".
+
+    const quantidadeMarmitas = texto.match(
+        /\b(\d+|um|uma|dois|duas|tres|quatro|cinco)\s+marmitas?\b/
+    );
+
+    if (quantidadeMarmitas) {
+        return converterNumero(quantidadeMarmitas[1]);
+    }
+
+    // Depois procura quantidade imediatamente antes do produto.
+    // Exemplo: "quero 2 ovos extras".
+
+    const antes = texto.slice(
+        Math.max(0, posicao - 50),
+        posicao
+    );
+
+    const resultado = antes.match(
+        /(\d+|um|uma|dois|duas|tres|quatro|cinco)\s*$/
+    );
+
+    if (resultado) {
+        return converterNumero(resultado[1]);
+    }
+
+    return 1;
 }
 
 // ==========================================
-// 4. ATUALIZAR CARRINHO
+// 4. IDENTIFICAR PRODUTOS
+// ==========================================
+
+function identificarProdutos(texto) {
+
+    const encontrados = [];
+
+    // Números correspondentes às marmitas.
+
+    const tiposMarmita = {
+        1: "frango",
+        2: "bife",
+        3: "carne",
+        4: "linguica",
+        5: "vegetariana",
+        6: "milanesa"
+    };
+
+    // Exemplo: "quero 2 marmitas do tipo 2".
+
+    const numeroTipo = texto.match(
+        /\b(?:tipo|opcao|numero|n)\s*(\d+)\b/
+    );
+
+    if (
+        numeroTipo &&
+        /\bmarmitas?\b/.test(texto)
+    ) {
+
+        const id = tiposMarmita[numeroTipo[1]];
+
+        if (id) {
+
+            const produto = cardapio.find(
+                item => item.id === id
+            );
+
+            if (produto) {
+
+                encontrados.push({
+                    produto: produto,
+                    posicao: numeroTipo.index,
+                    quantidade: obterQuantidade(
+                        texto,
+                        numeroTipo.index
+                    )
+                });
+            }
+        }
+    }
+
+    // Identifica os produtos pelo nome ou apelido.
+
+    for (const produto of cardapio) {
+
+        // Evita adicionar duas vezes o mesmo produto
+        // quando ele já foi reconhecido pelo número.
+
+        if (
+            encontrados.some(
+                item => item.produto.id === produto.id
+            )
+        ) {
+            continue;
+        }
+
+        // Prioriza expressões maiores.
+
+        const palavras = [...produto.palavras]
+            .sort((a, b) => b.length - a.length);
+
+        for (const palavra of palavras) {
+
+            const posicao = texto.indexOf(
+                normalizar(palavra)
+            );
+
+            if (posicao !== -1) {
+
+                encontrados.push({
+                    produto: produto,
+                    posicao: posicao,
+                    quantidade: obterQuantidade(
+                        texto,
+                        posicao
+                    )
+                });
+
+                break;
+            }
+        }
+    }
+
+    return encontrados;
+}
+
+// ==========================================
+// 5. PERSONALIZAÇÕES
+// ==========================================
+
+function identificarPersonalizacoes(texto) {
+
+    const personalizacoes = [];
+
+    if (
+        texto.includes("sem cebola") ||
+        texto.includes("retirar cebola") ||
+        texto.includes("tirar cebola")
+    ) {
+        personalizacoes.push("Sem cebola");
+    }
+
+    if (
+        texto.includes("sem alho") ||
+        texto.includes("retirar alho") ||
+        texto.includes("tirar alho")
+    ) {
+        personalizacoes.push("Sem alho");
+    }
+
+    if (texto.includes("bem passada")) {
+        personalizacoes.push("Bem passada");
+    }
+
+    if (texto.includes("mal passada")) {
+        personalizacoes.push("Malpassada");
+    }
+
+    if (texto.includes("ao ponto")) {
+        personalizacoes.push("Ao ponto");
+    }
+
+    return personalizacoes;
+}
+
+// ==========================================
+// 6. ATUALIZAR CARRINHO
 // ==========================================
 
 function atualizarCarrinho(textoOriginal) {
 
     const texto = normalizar(textoOriginal);
 
-    const remover =
-        /\b(remover|retirar|tirar|excluir|cancelar|cancele)\b/.test(texto);
-
-    let encontrouProduto = false;
-
-    for (const produto of cardapio) {
-
-        let posicao = -1;
-
-        for (const palavra of produto.palavras) {
-
-            posicao = texto.indexOf(normalizar(palavra));
-
-            if (posicao !== -1) break;
-        }
-
-        if (posicao === -1) continue;
-
-        encontrouProduto = true;
-
-        if (remover) {
-
-            delete carrinho[produto.id];
-
-            continue;
-        }
-
-        const quantidade = obterQuantidade(texto, posicao);
-
-        if (!carrinho[produto.id]) {
-
-            carrinho[produto.id] = {
-                produto: produto,
-                quantidade: 0,
-                personalizacao: ""
-            };
-        }
-
-        carrinho[produto.id].quantidade += quantidade;
-
-        const personalizacoes = [];
-
-        if (texto.includes("sem cebola")) {
-            personalizacoes.push("Sem cebola");
-        }
-
-        if (texto.includes("sem alho")) {
-            personalizacoes.push("Sem alho");
-        }
-
-        if (texto.includes("bem passada")) {
-            personalizacoes.push("Bem passada");
-        }
-
-        if (texto.includes("mal passada")) {
-            personalizacoes.push("Malpassada");
-        }
-
-        if (texto.includes("ao ponto")) {
-            personalizacoes.push("Ao ponto");
-        }
-
-        if (personalizacoes.length > 0) {
-
-            carrinho[produto.id].personalizacao =
-                personalizacoes.join(", ");
-        }
-    }
-
-    // FORMA DE RECEBIMENTO
+    // Reconhece a forma de recebimento.
 
     if (
         texto.includes("retirada") ||
@@ -233,11 +357,55 @@ function atualizarCarrinho(textoOriginal) {
         tipoEntrega = "entrega";
     }
 
-    return encontrouProduto;
+    // Identifica produtos.
+
+    const encontrados = identificarProdutos(texto);
+
+    const personalizacoes =
+        identificarPersonalizacoes(texto);
+
+    const mencionaIngrediente =
+        /cebola|alho|sal|pimenta/.test(texto);
+
+    const remover =
+        /\b(remover|retirar|tirar|excluir|cancelar|cancele)\b/.test(texto)
+        && !mencionaIngrediente;
+
+    for (const item of encontrados) {
+
+        const produto = item.produto;
+
+        if (remover) {
+
+            delete carrinho[produto.id];
+
+            continue;
+        }
+
+        if (!carrinho[produto.id]) {
+
+            carrinho[produto.id] = {
+                produto: produto,
+                quantidade: 0,
+                personalizacao: ""
+            };
+        }
+
+        carrinho[produto.id].quantidade +=
+            item.quantidade;
+
+        if (personalizacoes.length > 0) {
+
+            carrinho[produto.id].personalizacao =
+                personalizacoes.join(", ");
+        }
+    }
+
+    return encontrados.length > 0;
 }
 
 // ==========================================
-// 5. CALCULAR VALORES
+// 7. CALCULAR VALORES
 // ==========================================
 
 function calcularTotal() {
@@ -263,16 +431,16 @@ function calcularTotal() {
 }
 
 // ==========================================
-// 6. MOSTRAR NOTA DO PEDIDO
+// 8. MOSTRAR NOTA DO PEDIDO
 // ==========================================
 
 function exibirCarrinho() {
 
     const nota = document.getElementById("notaFiscal");
 
-    const itens = Object.values(carrinho);
+    if (!nota) return;
 
-    // Limpa o conteúdo anterior.
+    const itens = Object.values(carrinho);
 
     nota.innerHTML = "";
 
@@ -286,12 +454,12 @@ function exibirCarrinho() {
 
     titulo.textContent = "🧾 Seu pedido";
 
-    const nomeRestaurante = document.createElement("p");
+    const nome = document.createElement("p");
 
-    nomeRestaurante.textContent = "Marmita Caseira";
+    nome.textContent = "Marmita Caseira";
 
     cabecalho.appendChild(titulo);
-    cabecalho.appendChild(nomeRestaurante);
+    cabecalho.appendChild(nome);
 
     nota.appendChild(cabecalho);
 
@@ -326,11 +494,9 @@ function exibirCarrinho() {
         return;
     }
 
-    // VALORES DO PEDIDO
-
     const valores = calcularTotal();
 
-    // LISTA DE PRODUTOS
+    // PRODUTOS
 
     for (const item of itens) {
 
@@ -341,9 +507,9 @@ function exibirCarrinho() {
         const valor =
             item.produto.preco * item.quantidade;
 
-        const nome = document.createElement("div");
+        const nomeProduto = document.createElement("div");
 
-        nome.className = "nota-item-linha";
+        nomeProduto.className = "nota-item-linha";
 
         const descricao = document.createElement("span");
 
@@ -355,12 +521,10 @@ function exibirCarrinho() {
         preco.textContent =
             `R$ ${formatarDinheiro(valor)}`;
 
-        nome.appendChild(descricao);
-        nome.appendChild(preco);
+        nomeProduto.appendChild(descricao);
+        nomeProduto.appendChild(preco);
 
-        linha.appendChild(nome);
-
-        // PERSONALIZAÇÕES
+        linha.appendChild(nomeProduto);
 
         if (item.personalizacao) {
 
@@ -457,21 +621,23 @@ function exibirCarrinho() {
 }
 
 // ==========================================
-// 7. MONTAR HISTÓRICO PARA A IA
+// 9. MONTAR CONTEXTO DA IA
 // ==========================================
 
 function montarContexto(novaMensagem) {
 
     const mensagensRecentes = historico.slice(-8);
 
+    const valores = calcularTotal();
+
     let contexto = `
-Você está continuando um atendimento da Marmita Caseira.
+Você é o atendente virtual da Marmita Caseira.
 
-Considere o histórico abaixo para entender o pedido completo.
+Continue a conversa considerando o histórico e o estado do carrinho.
 
-Não peça novamente informações que o cliente já forneceu.
+Não pergunte novamente informações que o cliente já forneceu.
 
-HISTÓRICO DA CONVERSA:
+HISTÓRICO:
 `;
 
     for (const mensagem of mensagensRecentes) {
@@ -485,28 +651,24 @@ HISTÓRICO DA CONVERSA:
             `\n${autor}: ${mensagem.content}\n`;
     }
 
-    // ESTADO ATUAL DO CARRINHO
-
-    const itens = Object.values(carrinho);
-
-    const valores = calcularTotal();
-
     contexto += `
 
 ESTADO ATUAL DO CARRINHO:
-
 `;
+
+    const itens = Object.values(carrinho);
 
     if (itens.length === 0) {
 
-        contexto += "O carrinho está vazio.\n";
+        contexto += "Carrinho vazio.\n";
 
     } else {
 
         for (const item of itens) {
 
             contexto +=
-                `${item.quantidade}x ${item.produto.nome} - R$ ${formatarDinheiro(item.produto.preco)} por unidade. `;
+                `${item.quantidade}x ${item.produto.nome}, ` +
+                `preço unitário R$ ${formatarDinheiro(item.produto.preco)}. `;
 
             if (item.personalizacao) {
 
@@ -520,19 +682,19 @@ ESTADO ATUAL DO CARRINHO:
 
     contexto += `
 Subtotal: R$ ${formatarDinheiro(valores.subtotal)}
-Entrega: ${tipoEntrega === "entrega" ? "R$ " + formatarDinheiro(valores.entrega) : "Retirada gratuita"}
-TOTAL: R$ ${formatarDinheiro(valores.total)}
+Entrega: ${tipoEntrega === "entrega"
+        ? "R$ " + formatarDinheiro(valores.entrega)
+        : "Gratuita"}
+Total: R$ ${formatarDinheiro(valores.total)}
 
-Use esses valores como referência para responder sobre o pedido.
-Não invente preços nem altere os valores do carrinho.
+Use o estado do carrinho para responder sobre o pedido.
+Não invente produtos ou preços.
 
 NOVA MENSAGEM DO CLIENTE:
 ${novaMensagem}
 
-Continue o atendimento considerando o histórico e o carrinho atual.
+Responda naturalmente, em português brasileiro.
 `;
-
-    // LIMITA O TAMANHO DA MENSAGEM
 
     if (contexto.length > 3500) {
 
@@ -543,7 +705,7 @@ Continue o atendimento considerando o histórico e o carrinho atual.
 }
 
 // ==========================================
-// 8. ENVIAR MENSAGEM
+// 10. ENVIAR MENSAGEM
 // ==========================================
 
 async function enviarMensagem() {
@@ -556,7 +718,7 @@ async function enviarMensagem() {
 
     const texto = campo.value.trim();
 
-    if (texto === "") return;
+    if (!texto) return;
 
     campo.value = "";
 
@@ -572,7 +734,7 @@ async function enviarMensagem() {
 
     chat.appendChild(mensagemUsuario);
 
-    // ATUALIZA CARRINHO
+    // ATUALIZA O CARRINHO IMEDIATAMENTE
 
     atualizarCarrinho(texto);
 
@@ -593,11 +755,7 @@ async function enviarMensagem() {
 
     try {
 
-        // MONTA CONTEXTO
-
         const contexto = montarContexto(texto);
-
-        // ENVIA PARA O WORKER
 
         const resposta = await fetch(API_URL, {
 
@@ -645,26 +803,18 @@ async function enviarMensagem() {
             dados.resposta ||
             "Não recebi uma resposta.";
 
-        // MOSTRA RESPOSTA DA IA
-
         mensagemBot.textContent = respostaIA;
 
         // SALVA HISTÓRICO
 
         historico.push({
-
             role: "user",
-
             content: texto
-
         });
 
         historico.push({
-
             role: "assistant",
-
             content: respostaIA
-
         });
 
         // ATUALIZA NOTA
@@ -691,7 +841,7 @@ async function enviarMensagem() {
 }
 
 // ==========================================
-// 9. ENVIAR COM ENTER
+// 11. ENVIAR COM ENTER
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -714,11 +864,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // EXIBE O CARRINHO INICIAL
-
     exibirCarrinho();
-
-});
 
 });
 
