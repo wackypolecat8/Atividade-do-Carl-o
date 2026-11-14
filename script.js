@@ -41,14 +41,17 @@ async function enviarMensagem() {
         const dados = await resposta.json();
 
         if (!resposta.ok) {
-            throw new Error(dados.erro || "Falha na API");
+            throw new Error(
+                dados.detalhe || dados.erro || "Falha na API"
+            );
         }
 
-        mensagemBot.textContent = dados.resposta || "Não recebi uma resposta.";
+        mensagemBot.textContent =
+            dados.resposta || "Não recebi uma resposta.";
 
     } catch (erro) {
-        mensagemBot.textContent = "Não consegui conectar ao atendente. Tente novamente.";
-        console.error(erro);
+        mensagemBot.textContent = "Erro: " + erro.message;
+        console.error("Erro no atendimento:", erro);
     }
 
     chat.scrollTop = chat.scrollHeight;
