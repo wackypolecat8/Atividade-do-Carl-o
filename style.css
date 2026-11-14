@@ -12,6 +12,8 @@ body {
     min-height: 100vh;
 }
 
+/* CABEÇALHO */
+
 header {
     text-align: center;
     padding: 28px 15px;
@@ -27,6 +29,8 @@ header p {
     color: #c5d8ed;
 }
 
+/* ESTRUTURA PRINCIPAL */
+
 main {
     width: 100%;
     padding: 20px;
@@ -35,8 +39,13 @@ main {
 .layout {
     max-width: 1150px;
     margin: 0 auto;
+
     display: grid;
-    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+
+    grid-template-columns:
+        minmax(0, 1.7fr)
+        minmax(280px, 0.9fr);
+
     gap: 24px;
     align-items: start;
 }
@@ -47,7 +56,10 @@ main {
     background: #f8fafc;
     border-radius: 16px;
     padding: 22px;
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.22);
+
+    box-shadow:
+        0 12px 35px rgba(0, 0, 0, 0.22);
+
     min-width: 0;
 }
 
@@ -65,12 +77,17 @@ main {
     font-size: 14px;
 }
 
+/* HISTÓRICO DE MENSAGENS */
+
 #chat {
     height: 480px;
     overflow-y: auto;
+
     padding: 15px;
+
     background: #eaf0f7;
     border-radius: 12px;
+
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -81,24 +98,32 @@ main {
 .mensagem {
     max-width: 85%;
     padding: 12px 15px;
+
     border-radius: 12px;
+
     line-height: 1.5;
     font-size: 14px;
+
     overflow-wrap: anywhere;
 }
 
 .mensagem.bot {
     background: white;
     color: #172033;
+
     align-self: flex-start;
+
     border: 1px solid #dbe3ed;
 }
 
 .mensagem.usuario {
     background: #174d7a;
     color: white;
+
     align-self: flex-end;
 }
+
+/* CAMPO DE DIGITAÇÃO */
 
 .entrada {
     display: flex;
@@ -109,24 +134,33 @@ main {
 .entrada input {
     flex: 1;
     min-width: 0;
+
     padding: 14px;
+
     border: 1px solid #cbd5e1;
     border-radius: 9px;
+
     outline: none;
     font-size: 14px;
 }
 
 .entrada input:focus {
     border-color: #174d7a;
-    box-shadow: 0 0 0 2px rgba(23, 77, 122, 0.12);
+
+    box-shadow:
+        0 0 0 2px rgba(23, 77, 122, 0.12);
 }
 
 .entrada button {
     background: #174d7a;
     color: white;
+
     border: none;
+
     padding: 0 22px;
+
     border-radius: 9px;
+
     cursor: pointer;
     font-weight: bold;
 }
@@ -144,14 +178,21 @@ main {
 
 #notaFiscal {
     background: white;
+
     border-radius: 16px;
     padding: 22px;
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.22);
+
+    box-shadow:
+        0 12px 35px rgba(0, 0, 0, 0.22);
 }
+
+/* CABEÇALHO DA NOTA */
 
 .nota-cabecalho {
     text-align: center;
+
     border-bottom: 2px dashed #cbd5e1;
+
     padding-bottom: 18px;
     margin-bottom: 18px;
 }
@@ -166,14 +207,18 @@ main {
     font-size: 13px;
 }
 
+/* NOTA VAZIA */
+
 .nota-vazia {
     text-align: center;
     padding: 30px 10px;
+
     color: #64748b;
 }
 
 .nota-vazia span {
     font-size: 35px;
+
     display: block;
     margin-bottom: 12px;
 }
@@ -187,25 +232,34 @@ main {
     line-height: 1.5;
 }
 
+/* ITENS DO PEDIDO */
+
 .nota-item {
     padding: 12px 0;
+
     border-bottom: 1px solid #e2e8f0;
 }
 
 .nota-item-linha {
     display: flex;
     justify-content: space-between;
+
     gap: 10px;
+
     font-size: 14px;
     font-weight: bold;
 }
 
 .nota-item small {
     display: block;
+
     color: #64748b;
+
     margin-top: 6px;
     font-size: 12px;
 }
+
+/* VALORES */
 
 .nota-valores {
     padding-top: 18px;
@@ -214,35 +268,50 @@ main {
 .nota-valor-linha {
     display: flex;
     justify-content: space-between;
+
     margin-bottom: 12px;
+
     font-size: 14px;
     color: #475569;
 }
 
+/* TOTAL */
+
 .nota-total {
     border-top: 2px dashed #cbd5e1;
+
     margin-top: 15px;
     padding-top: 18px;
+
     display: flex;
     justify-content: space-between;
+
     gap: 10px;
+
     color: #166534;
+
     font-size: 19px;
     font-weight: bold;
 }
 
+/* RODAPÉ */
+
 .nota-rodape {
     text-align: center;
+
     margin-top: 22px;
     padding-top: 15px;
+
     border-top: 1px dashed #cbd5e1;
+
     color: #94a3b8;
     font-size: 11px;
 }
 
-/* CELULAR E TABLET */
+/* RESPONSIVIDADE */
 
 @media (max-width: 800px) {
+
     main {
         padding: 12px;
     }
@@ -261,6 +330,7 @@ main {
 }
 
 @media (max-width: 480px) {
+
     header h1 {
         font-size: 24px;
     }
