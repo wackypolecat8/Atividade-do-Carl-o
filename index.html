@@ -1,10 +1,13 @@
 
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Marmita Caseira</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -16,23 +19,30 @@
     </header>
 
     <main>
+
         <div class="layout">
 
+            <!-- ÁREA DO CHAT -->
+
             <section class="container">
+
                 <div class="titulo-chat">
                     <h2>Atendimento Virtual</h2>
                     <p>Faça seu pedido pelo chat!</p>
                 </div>
 
                 <div id="chat">
+
                     <div class="mensagem bot">
                         Olá! Seja bem-vindo à Marmita Caseira!
                         Sou seu assistente virtual.
                         Como posso ajudar?
                     </div>
+
                 </div>
 
                 <div class="entrada">
+
                     <input
                         type="text"
                         id="mensagem"
@@ -43,11 +53,17 @@
                     <button onclick="enviarMensagem()">
                         Enviar
                     </button>
+
                 </div>
+
             </section>
 
+            <!-- RESUMO DO PEDIDO -->
+
             <aside class="nota-container">
+
                 <div id="notaFiscal">
+
                     <div class="nota-cabecalho">
                         <h2>🧾 Seu pedido</h2>
                         <p>Marmita Caseira</p>
@@ -55,13 +71,20 @@
 
                     <div class="nota-vazia">
                         <span>🛒</span>
+
                         <p>Seu pedido aparecerá aqui.</p>
-                        <small>Escolha os itens pelo chat para começar.</small>
+
+                        <small>
+                            Escolha os itens pelo chat para começar.
+                        </small>
                     </div>
+
                 </div>
+
             </aside>
 
         </div>
+
     </main>
 
     <script src="script.js"></script>
