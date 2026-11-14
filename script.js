@@ -3,80 +3,30 @@ const API_URL =
     "https://chatbot-marmitas-api.d2023004130.workers.dev/";
 
 // ==========================================
-// 1. CARDÁPIO E PREÇOS
+// 1. CARDÁPIO
 // ==========================================
 
 const cardapio = [
-    {
-        id: "frango",
-        nome: "Marmita de frango grelhado",
-        preco: 20,
-        palavras: ["frango grelhado", "marmita de frango"]
-    },
-    {
-        id: "bife",
-        nome: "Marmita de bife acebolado",
-        preco: 23,
-        palavras: ["bife acebolado", "marmita de bife"]
-    },
-    {
-        id: "carne",
-        nome: "Marmita de carne moída",
-        preco: 21,
-        palavras: ["carne moida", "carne moída"]
-    },
-    {
-        id: "linguica",
-        nome: "Marmita de linguiça acebolada",
-        preco: 20,
-        palavras: ["linguica acebolada", "linguiça acebolada"]
-    },
-    {
-        id: "vegetariana",
-        nome: "Marmita vegetariana",
-        preco: 19,
-        palavras: ["marmita vegetariana", "vegetariana"]
-    },
-    {
-        id: "milanesa",
-        nome: "Marmita de frango à milanesa",
-        preco: 22,
-        palavras: ["frango a milanesa", "frango à milanesa"]
-    },
-    {
-        id: "ovo",
-        nome: "Ovo frito",
-        preco: 3,
-        palavras: ["ovo frito", "ovos fritos"]
-    },
-    {
-        id: "batata",
-        nome: "Batata frita",
-        preco: 5,
-        palavras: ["batata frita", "batatas fritas"]
-    },
-    {
-        id: "arroz",
-        nome: "Porção extra de arroz",
-        preco: 4,
-        palavras: ["arroz extra", "porcao extra de arroz", "porção extra de arroz"]
-    },
-    {
-        id: "feijao",
-        nome: "Porção extra de feijão",
-        preco: 4,
-        palavras: ["feijao extra", "feijão extra", "porcao extra de feijao", "porção extra de feijão"]
-    }
+    { id: "frango", nome: "Marmita de frango grelhado", preco: 20, palavras: ["frango grelhado", "marmita de frango"] },
+    { id: "bife", nome: "Marmita de bife acebolado", preco: 23, palavras: ["bife acebolado", "marmita de bife"] },
+    { id: "carne", nome: "Marmita de carne moída", preco: 21, palavras: ["carne moída", "carne moida"] },
+    { id: "linguica", nome: "Marmita de linguiça acebolada", preco: 20, palavras: ["linguiça acebolada", "linguica acebolada"] },
+    { id: "vegetariana", nome: "Marmita vegetariana", preco: 19, palavras: ["marmita vegetariana", "vegetariana"] },
+    { id: "milanesa", nome: "Marmita de frango à milanesa", preco: 22, palavras: ["frango à milanesa", "frango a milanesa"] },
+    { id: "ovo", nome: "Ovo frito", preco: 3, palavras: ["ovo frito", "ovos fritos"] },
+    { id: "batata", nome: "Batata frita", preco: 5, palavras: ["batata frita", "batatas fritas"] },
+    { id: "arroz", nome: "Porção extra de arroz", preco: 4, palavras: ["arroz extra", "porção extra de arroz", "porcao extra de arroz"] },
+    { id: "feijao", nome: "Porção extra de feijão", preco: 4, palavras: ["feijão extra", "feijao extra", "porção extra de feijão", "porcao extra de feijao"] }
 ];
 
 // ==========================================
-// 2. ESTADO DO CARRINHO
+// 2. DADOS DO ATENDIMENTO
 // ==========================================
 
 let carrinho = {};
-let tipoEntrega = "entrega";
-let pedidoConfirmado = false;
+let historico = [];
 
+let tipoEntrega = "entrega";
 const TAXA_ENTREGA = 5;
 
 // ==========================================
@@ -90,10 +40,14 @@ function normalizar(texto) {
         .replace(/[\u0300-\u036f]/g, "");
 }
 
+function formatarDinheiro(valor) {
+    return valor.toFixed(2).replace(".", ",");
+}
+
 function obterQuantidade(texto, posicao) {
 
     const antes = texto.slice(
-        Math.max(0, posicao - 35),
+        Math.max(0, posicao - 40),
         posicao
     );
 
@@ -101,9 +55,7 @@ function obterQuantidade(texto, posicao) {
         /(\d+|um|uma|dois|duas|tres|quatro|cinco)\s*(?:marmitas?\s+de\s+)?$/
     );
 
-    if (!resultado) {
-        return 1;
-    }
+    if (!resultado) return 1;
 
     const numeros = {
         um: 1,
@@ -121,17 +73,17 @@ function obterQuantidade(texto, posicao) {
 }
 
 // ==========================================
-// 4. IDENTIFICAR PRODUTOS NA MENSAGEM
+// 4. ATUALIZAR CARRINHO
 // ==========================================
 
 function atualizarCarrinho(textoOriginal) {
 
     const texto = normalizar(textoOriginal);
 
-    let encontrouProduto = false;
-
     const remover =
-        /\b(remover|retirar|tirar|excluir|cancele|cancelar)\b/.test(texto);
+        /\b(remover|retirar|tirar|excluir|cancelar|cancele)\b/.test(texto);
+
+    let encontrouProduto = false;
 
     for (const produto of cardapio) {
 
@@ -139,18 +91,12 @@ function atualizarCarrinho(textoOriginal) {
 
         for (const palavra of produto.palavras) {
 
-            const palavraNormalizada = normalizar(palavra);
+            posicao = texto.indexOf(normalizar(palavra));
 
-            posicao = texto.indexOf(palavraNormalizada);
-
-            if (posicao !== -1) {
-                break;
-            }
+            if (posicao !== -1) break;
         }
 
-        if (posicao === -1) {
-            continue;
-        }
+        if (posicao === -1) continue;
 
         encontrouProduto = true;
 
@@ -159,10 +105,7 @@ function atualizarCarrinho(textoOriginal) {
             continue;
         }
 
-        const quantidade = obterQuantidade(
-            texto,
-            posicao
-        );
+        const quantidade = obterQuantidade(texto, posicao);
 
         if (!carrinho[produto.id]) {
             carrinho[produto.id] = {
@@ -174,7 +117,6 @@ function atualizarCarrinho(textoOriginal) {
 
         carrinho[produto.id].quantidade += quantidade;
 
-        // Registra personalizações mencionadas
         const personalizacoes = [];
 
         if (texto.includes("sem cebola")) {
@@ -186,15 +128,15 @@ function atualizarCarrinho(textoOriginal) {
         }
 
         if (texto.includes("bem passada")) {
-            personalizacoes.push("Carne bem passada");
+            personalizacoes.push("Bem passada");
         }
 
         if (texto.includes("mal passada")) {
-            personalizacoes.push("Carne malpassada");
+            personalizacoes.push("Malpassada");
         }
 
         if (texto.includes("ao ponto")) {
-            personalizacoes.push("Carne ao ponto");
+            personalizacoes.push("Ao ponto");
         }
 
         if (personalizacoes.length > 0) {
@@ -203,30 +145,29 @@ function atualizarCarrinho(textoOriginal) {
         }
     }
 
-    // Identifica o tipo de entrega
-    if (texto.includes("retirada") ||
-        texto.includes("buscar no restaurante") ||
-        texto.includes("vou buscar")) {
+    // Forma de recebimento
 
+    if (
+        texto.includes("retirada") ||
+        texto.includes("vou buscar") ||
+        texto.includes("buscar no restaurante")
+    ) {
         tipoEntrega = "retirada";
     }
 
-    if (texto.includes("com entrega") ||
+    if (
+        texto.includes("com entrega") ||
         texto.includes("quero entrega") ||
-        texto.includes("entrega em casa")) {
-
+        texto.includes("entrega em casa")
+    ) {
         tipoEntrega = "entrega";
-    }
-
-    if (encontrouProduto) {
-        pedidoConfirmado = false;
     }
 
     return encontrouProduto;
 }
 
 // ==========================================
-// 5. CALCULAR TOTAL DO CARRINHO
+// 5. CALCULAR VALORES
 // ==========================================
 
 function calcularTotal() {
@@ -243,28 +184,25 @@ function calcularTotal() {
         tipoEntrega === "entrega" ? TAXA_ENTREGA : 0;
 
     return {
-        subtotal,
-        entrega,
+        subtotal: subtotal,
+        entrega: entrega,
         total: subtotal + entrega
     };
 }
 
 // ==========================================
-// 6. EXIBIR RESUMO DO PEDIDO
+// 6. MOSTRAR CARRINHO
 // ==========================================
 
 function exibirCarrinho(chat) {
 
     const itens = Object.values(carrinho);
 
-    if (itens.length === 0) {
-        return;
-    }
+    if (itens.length === 0) return;
 
     const valores = calcularTotal();
 
     const resumo = document.createElement("div");
-
     resumo.className = "mensagem bot";
 
     const titulo = document.createElement("strong");
@@ -280,8 +218,7 @@ function exibirCarrinho(chat) {
             item.produto.preco * item.quantidade;
 
         linha.textContent =
-            `${item.quantidade}x ${item.produto.nome} - ` +
-            `R$ ${valor.toFixed(2).replace(".", ",")}`;
+            `${item.quantidade}x ${item.produto.nome} - R$ ${formatarDinheiro(valor)}`;
 
         resumo.appendChild(linha);
 
@@ -296,38 +233,78 @@ function exibirCarrinho(chat) {
         }
     }
 
-    const entrega = document.createElement("p");
+    const linhaSubtotal = document.createElement("p");
+    linhaSubtotal.textContent =
+        "Subtotal: R$ " + formatarDinheiro(valores.subtotal);
 
-    entrega.textContent =
+    resumo.appendChild(linhaSubtotal);
+
+    const linhaEntrega = document.createElement("p");
+
+    linhaEntrega.textContent =
         tipoEntrega === "entrega"
             ? "Entrega: R$ 5,00"
-            : "Retirada: grátis";
+            : "Retirada: gratuita";
 
-    resumo.appendChild(entrega);
+    resumo.appendChild(linhaEntrega);
 
     const total = document.createElement("strong");
 
     total.textContent =
-        "Total: R$ " +
-        valores.total.toFixed(2).replace(".", ",");
+        "TOTAL: R$ " + formatarDinheiro(valores.total);
 
     resumo.appendChild(total);
-
-    if (pedidoConfirmado) {
-
-        const confirmado = document.createElement("p");
-
-        confirmado.textContent =
-            "Pedido marcado como confirmado nesta demonstração.";
-
-        resumo.appendChild(confirmado);
-    }
 
     chat.appendChild(resumo);
 }
 
 // ==========================================
-// 7. ENVIAR MENSAGEM PARA A GROQ
+// 7. MONTAR HISTÓRICO PARA A IA
+// ==========================================
+
+function montarContexto(novaMensagem) {
+
+    const mensagensRecentes = historico.slice(-8);
+
+    let contexto = `
+Você está continuando um atendimento já iniciado.
+
+Considere todo o histórico abaixo para entender
+o pedido completo do cliente.
+
+Não peça novamente informações que o cliente
+já forneceu.
+
+HISTÓRICO DA CONVERSA:
+`;
+
+    for (const mensagem of mensagensRecentes) {
+
+        const autor =
+            mensagem.role === "user"
+                ? "CLIENTE"
+                : "ATENDENTE";
+
+        contexto += `\n${autor}: ${mensagem.content}\n`;
+    }
+
+    contexto += `
+NOVA MENSAGEM DO CLIENTE:
+${novaMensagem}
+
+Continue o atendimento considerando o histórico completo.
+`;
+
+    // Respeita o limite de mensagem do Worker
+    if (contexto.length > 3500) {
+        contexto = contexto.slice(-3500);
+    }
+
+    return contexto;
+}
+
+// ==========================================
+// 8. ENVIAR MENSAGEM
 // ==========================================
 
 async function enviarMensagem() {
@@ -337,13 +314,12 @@ async function enviarMensagem() {
 
     const texto = campo.value.trim();
 
-    if (texto === "") {
-        return;
-    }
+    if (texto === "") return;
 
     campo.value = "";
 
-    // Mostra mensagem do usuário
+    // Mostra mensagem do cliente
+
     const mensagemUsuario = document.createElement("div");
 
     mensagemUsuario.className = "mensagem usuario";
@@ -351,22 +327,12 @@ async function enviarMensagem() {
 
     chat.appendChild(mensagemUsuario);
 
-    // Atualiza o carrinho com os produtos identificados
+    // Atualiza o carrinho
+
     atualizarCarrinho(texto);
 
-    // Verifica confirmação explícita
-    const textoNormalizado = normalizar(texto);
+    // Mostra processamento
 
-    if (
-        /\b(confirmo|pode confirmar|confirmar pedido|pode fechar|fechar pedido)\b/
-            .test(textoNormalizado)
-    ) {
-        if (Object.keys(carrinho).length > 0) {
-            pedidoConfirmado = true;
-        }
-    }
-
-    // Mensagem de processamento
     const mensagemBot = document.createElement("div");
 
     mensagemBot.className = "mensagem bot";
@@ -378,7 +344,12 @@ async function enviarMensagem() {
 
     try {
 
+        // Inclui o histórico anterior na mensagem enviada
+
+        const contexto = montarContexto(texto);
+
         const resposta = await fetch(API_URL, {
+
             method: "POST",
 
             headers: {
@@ -386,7 +357,7 @@ async function enviarMensagem() {
             },
 
             body: JSON.stringify({
-                mensagem: texto,
+                mensagem: contexto,
                 modelo: "groq"
             })
         });
@@ -415,10 +386,25 @@ async function enviarMensagem() {
             );
         }
 
-        mensagemBot.textContent =
+        const respostaIA =
             dados.resposta || "Não recebi uma resposta.";
 
+        mensagemBot.textContent = respostaIA;
+
+        // Salva a conversa para as próximas mensagens
+
+        historico.push({
+            role: "user",
+            content: texto
+        });
+
+        historico.push({
+            role: "assistant",
+            content: respostaIA
+        });
+
         // Mostra o carrinho atualizado
+
         exibirCarrinho(chat);
 
     } catch (erro) {
@@ -433,7 +419,7 @@ async function enviarMensagem() {
 }
 
 // ==========================================
-// 8. ENVIO COM ENTER
+// 9. ENVIAR COM ENTER
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -451,7 +437,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 evento.preventDefault();
                 enviarMensagem();
             }
-
         });
     }
 });
