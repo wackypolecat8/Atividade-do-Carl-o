@@ -1,4 +1,8 @@
 
+/* ==========================================
+   CONFIGURAÇÕES GERAIS
+========================================== */
+
 * {
     margin: 0;
     padding: 0;
@@ -12,7 +16,9 @@ body {
     min-height: 100vh;
 }
 
-/* CABEÇALHO */
+/* ==========================================
+   CABEÇALHO
+========================================== */
 
 header {
     text-align: center;
@@ -29,7 +35,9 @@ header p {
     color: #c5d8ed;
 }
 
-/* ESTRUTURA PRINCIPAL */
+/* ==========================================
+   ESTRUTURA PRINCIPAL
+========================================== */
 
 main {
     width: 100%;
@@ -50,7 +58,9 @@ main {
     align-items: start;
 }
 
-/* CHAT */
+/* ==========================================
+   CHAT
+========================================== */
 
 .container {
     background: #f8fafc;
@@ -77,7 +87,40 @@ main {
     font-size: 14px;
 }
 
-/* HISTÓRICO DE MENSAGENS */
+/* ==========================================
+   BOTÃO NOVO PEDIDO
+========================================== */
+
+.botao-novo-pedido {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 9px 15px;
+
+    border: 1px solid #ccc;
+    border-radius: 8px;
+
+    background: #ffffff;
+    color: #333333;
+
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+
+    transition: background 0.2s, transform 0.2s;
+}
+
+.botao-novo-pedido:hover {
+    background: #eeeeee;
+    transform: translateY(-1px);
+}
+
+.botao-novo-pedido:active {
+    transform: translateY(0);
+}
+
+/* ==========================================
+   HISTÓRICO DE MENSAGENS
+========================================== */
 
 #chat {
     height: 480px;
@@ -93,7 +136,9 @@ main {
     gap: 12px;
 }
 
-/* MENSAGENS */
+/* ==========================================
+   MENSAGENS
+========================================== */
 
 .mensagem {
     max-width: 85%;
@@ -123,7 +168,9 @@ main {
     align-self: flex-end;
 }
 
-/* CAMPO DE DIGITAÇÃO */
+/* ==========================================
+   CAMPO DE DIGITAÇÃO
+========================================== */
 
 .entrada {
     display: flex;
@@ -169,7 +216,9 @@ main {
     background: #0e365b;
 }
 
-/* NOTA DO PEDIDO */
+/* ==========================================
+   NOTA DO PEDIDO
+========================================== */
 
 .nota-container {
     position: sticky;
@@ -186,7 +235,9 @@ main {
         0 12px 35px rgba(0, 0, 0, 0.22);
 }
 
-/* CABEÇALHO DA NOTA */
+/* ==========================================
+   CABEÇALHO DA NOTA
+========================================== */
 
 .nota-cabecalho {
     text-align: center;
@@ -207,7 +258,9 @@ main {
     font-size: 13px;
 }
 
-/* NOTA VAZIA */
+/* ==========================================
+   NOTA VAZIA
+========================================== */
 
 .nota-vazia {
     text-align: center;
@@ -232,7 +285,9 @@ main {
     line-height: 1.5;
 }
 
-/* ITENS DO PEDIDO */
+/* ==========================================
+   ITENS DO PEDIDO
+========================================== */
 
 .nota-item {
     padding: 12px 0;
@@ -259,7 +314,9 @@ main {
     font-size: 12px;
 }
 
-/* VALORES */
+/* ==========================================
+   VALORES
+========================================== */
 
 .nota-valores {
     padding-top: 18px;
@@ -275,7 +332,9 @@ main {
     color: #475569;
 }
 
-/* TOTAL */
+/* ==========================================
+   TOTAL
+========================================== */
 
 .nota-total {
     border-top: 2px dashed #cbd5e1;
@@ -294,7 +353,9 @@ main {
     font-weight: bold;
 }
 
-/* RODAPÉ */
+/* ==========================================
+   RODAPÉ
+========================================== */
 
 .nota-rodape {
     text-align: center;
@@ -308,7 +369,9 @@ main {
     font-size: 11px;
 }
 
-/* RESPONSIVIDADE */
+/* ==========================================
+   RESPONSIVIDADE - TABLETS
+========================================== */
 
 @media (max-width: 800px) {
 
@@ -329,6 +392,10 @@ main {
     }
 }
 
+/* ==========================================
+   RESPONSIVIDADE - CELULARES
+========================================== */
+
 @media (max-width: 480px) {
 
     header h1 {
@@ -346,6 +413,11 @@ main {
 
     .mensagem {
         max-width: 95%;
+    }
+
+    .botao-novo-pedido {
+        width: 100%;
+        padding: 11px;
     }
 }
 
