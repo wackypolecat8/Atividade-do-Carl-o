@@ -16,29 +16,50 @@
     </header>
 
     <main>
-        <div class="container">
+        <div class="layout">
 
-            <h2>Atendimento Virtual</h2>
-
-            <div id="chat">
-                <div class="mensagem bot">
-                    Olá! Seja bem-vindo à Marmita Caseira!
-                    Sou seu assistente virtual.
-                    Como posso ajudar?
+            <section class="container">
+                <div class="titulo-chat">
+                    <h2>Atendimento Virtual</h2>
+                    <p>Faça seu pedido pelo chat!</p>
                 </div>
-            </div>
 
-            <div class="entrada">
-                <input
-                    type="text"
-                    id="mensagem"
-                    placeholder="Digite seu pedido..."
-                >
+                <div id="chat">
+                    <div class="mensagem bot">
+                        Olá! Seja bem-vindo à Marmita Caseira!
+                        Sou seu assistente virtual.
+                        Como posso ajudar?
+                    </div>
+                </div>
 
-                <button onclick="enviarMensagem()">
-                    Enviar
-                </button>
-            </div>
+                <div class="entrada">
+                    <input
+                        type="text"
+                        id="mensagem"
+                        placeholder="Digite seu pedido..."
+                        autocomplete="off"
+                    >
+
+                    <button onclick="enviarMensagem()">
+                        Enviar
+                    </button>
+                </div>
+            </section>
+
+            <aside class="nota-container">
+                <div id="notaFiscal">
+                    <div class="nota-cabecalho">
+                        <h2>🧾 Seu pedido</h2>
+                        <p>Marmita Caseira</p>
+                    </div>
+
+                    <div class="nota-vazia">
+                        <span>🛒</span>
+                        <p>Seu pedido aparecerá aqui.</p>
+                        <small>Escolha os itens pelo chat para começar.</small>
+                    </div>
+                </div>
+            </aside>
 
         </div>
     </main>
@@ -47,3 +68,4 @@
 
 </body>
 </html>
+
