@@ -44,7 +44,7 @@ async function enviarMensagem() {
 
                 body: JSON.stringify({
                     mensagem: texto,
-                    modelo: "gemini"
+                    modelo: "groq"
                 })
             }
         );
